@@ -123,7 +123,7 @@
     // --- VERCEL / CLOUDFLARE WORKERS API ENDPOINT 설정 ---
     // 실제 배포된 서버리스 함수의 URL로 변경해야 합니다.
     // 예: const API_URL = 'https://yonggok-chatbot.vercel.app/api/chat';
-    const API_URL = 'YOUR_SERVERLESS_API_ENDPOINT_HERE'; 
+    const API_URL = 'https://yonggok-chatbot.vercel.app/api/chat'; 
 
     const chatBox = document.getElementById('chat-box');
     const userInput = document.getElementById('user-input');
@@ -176,7 +176,7 @@
 
         } catch (error) {
             console.error('Error:', error);
-            if(API_URL === 'YOUR_SERVERLESS_API_ENDPOINT_HERE') {
+            if(API_URL === 'https://yonggok-chatbot.vercel.app/api/chat') {
                  appendMessage('bot', "⚠️ 시스템 오류: 아직 백엔드 API가 연결되지 않았습니다. 개발자에게 문의하세요.");
             } else {
                  appendMessage('bot', "죄송합니다. 서버 통신 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.");
