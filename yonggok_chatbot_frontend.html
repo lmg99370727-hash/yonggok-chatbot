@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>용곡초 중학교 신입생 배정 안내 도우미</title>
+    <style>
+        body {
+            font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f7f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .chat-container {
+            width: 100%;
+            max-width: 500px;
+            height: 90vh;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        .chat-box {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background-color: #fafafa;
+        }
+        .message {
+            max-width: 80%;
+            padding: 10px 15px;
+            border-radius: 20px;
+            line-height: 1.4;
+            font-size: 0.95rem;
+            word-wrap: break-word;
+        }
+        .bot-message {
+            background-color: #e8f5e9;
+            color: #333;
+            align-self: flex-start;
+            border-bottom-left-radius: 5px;
+        }
+        .user-message {
+            background-color: #4CAF50;
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 5px;
+        }
+        .input-area {
+            display: flex;
+            padding: 15px;
+            background-color: #fff;
+            border-top: 1px solid #ddd;
+        }
+        input[type="text"] {
+            flex: 1;
+            padding: 10px 15px;
+            border: 1px solid #ccc;
+            border-radius: 20px;
+            outline: none;
+            font-size: 1rem;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin-left: 10px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        /* Markdown Styling within bot message */
+        .bot-message p { margin: 0 0 10px 0; }
+        .bot-message p:last-child { margin: 0; }
+        .bot-message ul { margin: 0; padding-left: 20px; }
+        .loading {
+            font-style: italic;
+            color: #888;
+            align-self: flex-start;
+            margin-left: 10px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="chat-container">
+    <div class="header">용곡초 중입 배정 도우미</div>
+    <div class="chat-box" id="chat-box">
+        <div class="message bot-message">안녕하세요! 천안용곡초등학교 6학년 학부모님을 위한 중학교 신입생 배정 안내 챗봇입니다.<br><br>2027학년도 천안교육지원청 지침에 기반하여 답변해 드립니다. 궁금한 점을 입력해 주세요. (예: 다자녀 배정 서류가 뭔가요?, 서남부학군 중학교는 어디가 있나요?)</div>
+    </div>
+    <div class="loading" id="loading">도우미가 답변을 작성 중입니다...</div>
+    <div class="input-area">
+        <input type="text" id="user-input" placeholder="질문을 입력하세요..." onkeypress="handleKeyPress(event)">
+        <button onclick="sendMessage()">전송</button>
+    </div>
+</div>
+
+<script>
+    // --- VERCEL / CLOUDFLARE WORKERS API ENDPOINT 설정 ---
+    // 실제 배포된 서버리스 함수의 URL로 변경해야 합니다.
+    // 예: const API_URL = 'https://yonggok-chatbot.vercel.app/api/chat';
+    const API_URL = 'YOUR_SERVERLESS_API_ENDPOINT_HERE'; 
+
+    const chatBox = document.getElementById('chat-box');
+    const userInput = document.getElementById('user-input');
+    const loading = document.getElementById('loading');
+
+    function appendMessage(sender, text) {
+        const messageDiv = document.createElement('div');
+        messageDiv.classList.add('message');
+        
+        if (sender === 'user') {
+            messageDiv.classList.add('user-message');
+            messageDiv.textContent = text;
+        } else {
+            messageDiv.classList.add('bot-message');
+            // 간단한 마크다운 처리 (줄바꿈 및 리스트)
+            let formattedText = text.replace(/\n/g, '<br>');
+            formattedText = formattedText.replace(/\* (.*?)(<br>|$)/g, '<ul><li>$1</li></ul>');
+            messageDiv.innerHTML = formattedText;
+        }
+        
+        chatBox.appendChild(messageDiv);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    async function sendMessage() {
+        const text = userInput.value.trim();
+        if (!text) return;
+
+        appendMessage('user', text);
+        userInput.value = '';
+        loading.style.display = 'block';
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ message: text })
+            });
+
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+
+            const data = await response.json();
+            // 서버리스 함수에서 { reply: "..." } 형태로 반환한다고 가정
+            appendMessage('bot', data.reply || "죄송합니다. 응답을 이해할 수 없습니다.");
+
+        } catch (error) {
+            console.error('Error:', error);
+            if(API_URL === 'YOUR_SERVERLESS_API_ENDPOINT_HERE') {
+                 appendMessage('bot', "⚠️ 시스템 오류: 아직 백엔드 API가 연결되지 않았습니다. 개발자에게 문의하세요.");
+            } else {
+                 appendMessage('bot', "죄송합니다. 서버 통신 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.");
+            }
+        } finally {
+            loading.style.display = 'none';
+        }
+    }
+
+    function handleKeyPress(event) {
+        if (event.key === 'Enter') {
+            sendMessage();
+        }
+    }
+</script>
+
+</body>
+</html>
