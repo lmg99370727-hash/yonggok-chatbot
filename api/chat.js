@@ -61,7 +61,7 @@ export default async function handler(req, res) {
 
     const data = await response.json();
     
-    let botReply = "에러 상세 내용: " + JSON.stringify(data);
+    let botReply = "죄송합니다. 답변을 생성하지 못했습니다.";
     if (data.candidates && data.candidates.length > 0 && data.candidates[0].content && data.candidates[0].content.parts.length > 0) {
         botReply = data.candidates[0].content.parts[0].text;
     }
